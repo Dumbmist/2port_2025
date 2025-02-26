@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+
+    <title>Queue Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            transition: background-color 0.5s ease-in-out, box-shadow 0.5s ease-in-out;
+            margin: 0;
+            padding: 0;
+        }
+        .top-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            font-size: 22px;
+            font-weight: bold;
+            width: 100%;
+            transition: background-color 0.5s ease-in-out;
+        }
+        .occupied {
+            background-color: #ff4d4d;
+            color: white;
+        }
+        .unoccupied {
+            background-color: #4dff4d;
+            color: white;
+        }
+        .occupied-glow {
+            background-color: #ffcccc;
+            box-shadow: 0 0 20px 5px rgba(255, 0, 0, 0.5);
+        }
+        .unoccupied-glow {
+            background-color: #ccffcc;
+            box-shadow: 0 0 20px 5px rgba(0, 255, 0, 0.5);
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            margin-top: 20px;
+            padding: 20px;
+        }
+        .info-box {
+            border: 2px solid #888;
+            padding: 20px;
+            width: 300px;
+            text-align: center;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .queue {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #aaa;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        .map-container {
+            width: 400px;
+            height: 300px;
+            background-color: #eee;
+            margin-left: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .button {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: background-color 0.3s ease-in-out;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+
+        .map-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+        }
+        .map-container img {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .location {
+            position: absolute;
+            cursor: pointer;
+        }
+        .location:hover .info {
+            display: block;
+        }
+        .info {
+            display: none;
+            position: absolute;
+            bottom: 30px;
+            left: -50px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            z-index: 10;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column; /* Stack items vertically */
+            align-items: center; /* Optional: Align items to center */
+            gap: 5px; /* Adjust spacing between items */
+        }
+        .qr-code-container {
+            display: flex;
+            position:absolute;
+            justify-content: center; /* Center horizontally */
+            padding-top:400px; /* Add space below the queue */
+            left:260px;
+            z-index:-99;
+        }
+        
+        .qr-code-container img {
+            width: 200px; /* Adjust size as needed */
+            height: 200px;
+        }
+        .button{
+            z-index:99;
+        }
+    </style>
+</head>
+<body class="occupied-glow">
+    <div id="status-bar" class="top-bar occupied">OCCUPIED</div>
+    <div class="container">
+        <div class="info-box">
+            <p>Currently Away: <span id="current-away"></span>{{current_user}}</p>
+            <div class="queue">
+                <strong>Next-up:</strong>
+                <p id="next-up">{{next_up}}</p>
+                <strong>In Queue:</strong>
+                <ul id="queue-list"></ul>
+            </div>
+            <button class="button" id="leave-now">Leave Now</button>
+        </div>
+    
+        <!-- QR code placed right below the queue box -->
+        <div class="qr-code-container">
+            <img src="https://github.com/user-attachments/assets/6b500f35-2573-4bd8-8d10-9a6431e2a723">
+        </div>
+    
+        <div class="map-container">
+            <img src="https://i.ibb.co/tMQ1mTy6/map.png" alt="Map">
+        </div>
+    </div>
+    
+    
+    <script type="module">
+        import { javaURI, pythonURI, fetchOptions } from '/static/assets/api/pass_config.js';
+        
+        const teacherName = "jmort1021@gmail.com";
+        window.fetchLocations = async function fetchLocations() {
+            try {
+                const response = await fetch(javaURI + '/api/issue/issues', fetchOptions);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const issues = await response.json();
+
+                const mapContainer = document.querySelector('.map-container');
+
+                issues.forEach(issue => {
+                    console.log(issue.bathroom)
+                    if (issue.count == 0) {
+                        return;
+                    }
+                    const locElement = document.createElement('div');
+                    locElement.className = 'location';
+                    locElement.style.position = 'absolute';
+                    locElement.style.top = (issue.positionY * 100) + '%';
+                    locElement.style.left = (issue.positionX * 100) + '%';
+
+                    const icon = document.createElement('img');
+                    icon.src = 'https://i.ibb.co/jPDbhG4H/marker.webp';
+                    icon.alt = 'Location Icon';
+                    icon.style.width = '48px';
+                    icon.style.height = '48px';
+
+                    const info = document.createElement('div');
+                    info.className = 'info';
+                    info.textContent = `${issue.bathroom} Bathroom: ${issue.issue}`;
+
+                    locElement.appendChild(icon);
+                    locElement.appendChild(info);
+                    mapContainer.appendChild(locElement);
+                });
+            } catch (error) {
+                console.error('Error fetching issues:', error);
+            }
+        }
+
+        // Fetch locations on page load
+        fetchLocations();
+
+        console.log("hello")
+
+            // Fetch locations on page load
+        window.onload = function() { 
+            fetchLocations();
+        }
+
+        let  mortensenQueue = null;
+        async function fetchQueueData() {
+            try {
+                const QueueURI = javaURI + "/api/queue/all";
+                const response = await fetch(QueueURI, fetchOptions);
+        
+                if (response.status !== 200) {
+                    console.error("Failed to fetch queue data.");
+                    return;
+                }
+        
+                const data = await response.json();
+                console.log(data);
+
+                //const mortensenQueue = data.find(queue => queue.teacherEmail === teacherName);
+                for (let i = 0; i < data.length; i++)
+                {
+                    console.log(data[i].teacherEmail);
+                    if (data[i].teacherEmail == teacherName)
+                    {
+                        mortensenQueue = data[i];
+                        break;
+                    }
+                }
+                
+                console.log(mortensenQueue);
+                if (!mortensenQueue) {
+                    console.error("No queue found for the teacher.");
+                    return;
+                }
+
+                // Split the queue into an array
+                const queueArray = mortensenQueue.peopleQueue.split(",");
+                
+                // Set the first person as "currently away" and the second as "next-up"
+                const currentUser = queueArray[0] || "Nobody"; // First person in the queue
+                const nextUp = queueArray[1] || "None"; // Second person in the queue
+        
+                // Update the UI
+                document.getElementById("current-away").textContent = currentUser;
+                document.getElementById("next-up").textContent = nextUp;
+        
+                const queueList = document.getElementById("queue-list");
+                queueList.innerHTML = ""; // Clear the existing list
+        
+                // Add the rest of the queue (starting from index 2)
+                queueArray.slice(2).forEach(person => {
+                    const li = document.createElement("li");
+                    li.textContent = person;
+                    queueList.appendChild(li);
+                    queueList.style.listStyleType = "none";
+                });
+        
+                // Update status bar and glow effect
+                const statusBar = document.getElementById("status-bar");
+                if (document.getElementById('current-away').innerText.trim() != "Nobody") {
+                    statusBar.textContent = "OCCUPIED";
+                    statusBar.classList.add("occupied");
+                    statusBar.classList.remove("unoccupied");
+                    document.body.classList.add("occupied-glow");
+                    document.body.classList.remove("unoccupied-glow");
+                } else {
+                    statusBar.textContent = "UNOCCUPIED";
+                    statusBar.classList.add("unoccupied");
+                    statusBar.classList.remove("occupied");
+                    document.body.classList.add("unoccupied-glow");
+                    document.body.classList.remove("occupied-glow");
+                }
+            } catch (error) {
+                console.error("Error fetching queue data:", error);
+            }
+        }
+        
+        
+        function check_glow()
+        {
+            // Update status bar and glow effect
+            const statusBar = document.getElementById("status-bar");
+            if (document.getElementById('current-away').innerText.trim() != "Nobody") {
+                statusBar.textContent = "OCCUPIED";
+                statusBar.classList.add("occupied");
+                statusBar.classList.remove("unoccupied");
+                document.body.classList.add("occupied-glow");
+                document.body.classList.remove("unoccupied-glow");
+            } else {
+                statusBar.textContent = "UNOCCUPIED";
+                statusBar.classList.add("unoccupied");
+                statusBar.classList.remove("occupied");
+                document.body.classList.add("unoccupied-glow");
+                document.body.classList.remove("occupied-glow");
+            }
+        }
+        
+        // Fetch queue data on page load
+        document.addEventListener("DOMContentLoaded", fetchQueueData);
+        
+
+
+        async function updateQueue() {
+            try {
+                const addQueueURI = javaURI + "/api/queue/add"
+                const response = await fetch(addQueueURI, { method: "POST" }); // Update this if you have a specific route for updating the queue
+                if (response.ok) {
+                    fetchQueueData(); // Refresh queue data after updating
+                }
+            } catch (error) {
+                console.error("Error updating queue:", error);
+            }
+        }
+
+        
+        window.addEventListener('click', function(event) {
+            if (event.target && event.target.id == 'leave-now'){
+                if (document.getElementById('current-away').innerHTML === 'Nobody')
+                {
+                    removeFromQueue();
+                }
+                else
+                {
+                    document.getElementById('current-away').innerHTML = 'Nobody';
+                    check_glow();
+                }
+            }
+        })
+
+        const deleteOptions = {
+            ...fetchOptions,
+            method: 'DELETE',
+        };
+        function removeFromQueue()
+        {
+            fetch(javaURI + "/api/queue/removefront/" + teacherName, {
+                ...deleteOptions,
+            })
+                .then(response => {
+                    if (response.ok) {
+                        fetchQueueData();
+                    } else alert("Failed to remove from queue.");
+                })
+                .catch(error => console.error("Error removing from queue:", error));
+        }
+
+</script>
+</body>
+</html>
