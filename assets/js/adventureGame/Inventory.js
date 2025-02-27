@@ -3,7 +3,7 @@ let inventoryItems = [];
 let imagePath;
 
 const itemImages = {
-    "spoon":  "/images/gamify/spoon.png",
+    "spoon":  "/images/gamify/koy.png",
     "key":  "/images/gamify/key.png",
 };
 

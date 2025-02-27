@@ -158,27 +158,76 @@ class Npc extends Character {
      */
     handleCollisionEvent() {
         const objectID = this.collisionData.touchPoints.other.id;
-
+    
         if (!this.state.collisionEvents.includes(objectID)) {
             this.state.collisionEvents.push(objectID);
             
             // Find the player object that collided
             const player = GameEnv.gameObjects.find(obj => obj.canvas?.id === objectID);
             
-            if (player) {
-                // Force stop player movement
+            if (player && (player.canvas.id === "player" || player.canvas.id === "player2")) {
+                // Stop player movement on collision
                 player.velocity.x = 0;
                 player.velocity.y = 0;
                 player.isInteracting = true;
-            }
-
-            if(levelData.getPlayerItem() == 2){
-                levelData.removePlayerItem("spoon");
-                levelData.removePlayerItem("spoon");
-                levelData.addKey();
-                console.log("key");
+                
+                // Show a hint to press 'E' to interact
+                // You could add a visual indicator here if needed
             }
         }
+    }
+    
+    // Add this to the Item.js handleKeyDown method to fix key pickup
+    handleKeyDown({ key }) {
+        switch (key) {
+            case 'e':  
+                if (this.state.collisionEvents.length > 0) {
+                    // Check if player is colliding and has the required items
+                    const playerColliding = this.state.collisionEvents.some(id => {
+                        const obj = GameEnv.gameObjects.find(o => o.canvas?.id === id);
+                        return obj && (obj.canvas.id === "player" || obj.canvas.id === "player2");
+                    });
+                    
+                    if (playerColliding) {
+                        if (this.hasCollided("Hello, please help me escape this prison.")) {
+                            // Handle prison escape scenario
+                            levelData.setPlayerItem();
+                            this.destroy();
+                        } else if (this.canvas.id === "key") {
+                            // Handle key pickup
+                            levelData.addKey();
+                            this.destroy();
+                        }
+                    }
+                }
+                break;
+            case 'u':
+                // Handle Player 2 interaction if needed
+                break;
+        }
+    }
+    
+    // For LevelData.js (assuming you have this class)
+    // Make sure these methods work correctly
+    addKey() {
+        // Add key to inventory
+        import("./Inventory.js").then(inventoryModule => {
+            inventoryModule.addItemToInventory("key");
+        });
+    }
+    
+    removePlayerItem(itemName) {
+        // Remove item from inventory
+        import("./Inventory.js").then(inventoryModule => {
+            inventoryModule.removeItemFromInventory(itemName);
+        });
+    }
+    
+    // Method to get player inventory item count for a specific item
+    getPlayerItem(itemName = "spoon") {
+        // Get count of specific item in inventory
+        const inventoryItems = JSON.parse(localStorage.getItem("inventoryItems") || "[]");
+        return inventoryItems.filter(item => item === itemName).length;
     }
 
 }

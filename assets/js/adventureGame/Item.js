@@ -223,25 +223,48 @@ class Item extends GameObject {
         }
     }
 
-    /**
-     * Update the collisions array when player is touching the object
-     * @param {*} objectID 
-     */
-    
-    handleCollisionEvent() {
-        const objectID = this.collisionData.touchPoints.other.id;
-        const objectGreet = typeof this.collisionData.touchPoints.other.getGreeting === 'function' 
-            ? this.collisionData.touchPoints.other.getGreeting()
-            : this.collisionData.touchPoints.other.greeting || "none";
-
-        if (!this.state.collisionEvents.includes(objectID)) {
-            this.state.collisionEvents.push(objectID);
-            // Only show alert if it's not an Item and has a greeting
-            if(objectGreet != "none" && objectID !== 'Item'){
-                alert(objectGreet);
+    hasCollided(expectedGreeting) {
+        for (let id of this.state.collisionEvents) {
+            // Find the object that this item collided with
+            const collidedObj = GameEnv.gameObjects.find(obj => obj.canvas?.id === id);
+            
+            // Check if the collided object has the expected greeting
+            if (collidedObj && 
+                ((collidedObj.spriteData && collidedObj.spriteData.greeting === expectedGreeting) || 
+                (typeof collidedObj.getGreeting === 'function' && 
+                collidedObj.getGreeting() === expectedGreeting))) {
+                return true;
             }
         }
-        this.handleReaction();
+        return false;
+    }
+
+    // Replace your duplicate handleCollisionEvent methods with this single one
+    handleCollisionEvent() {
+        const objectID = this.collisionData.touchPoints.other.id;
+        
+        // Only handle each collision once
+        if (!this.state.collisionEvents.includes(objectID)) {
+            this.state.collisionEvents.push(objectID);
+            
+            // Find the collided object (likely the player)
+            const collidedObj = GameEnv.gameObjects.find(obj => obj.canvas?.id === objectID);
+            
+            // If it's a player collision, handle player interaction
+            if (collidedObj && (collidedObj.canvas.id === "player" || collidedObj.canvas.id === "player2")) {
+                // Allow the player to pick up the item with 'e' key
+                // The actual pickup happens in the handleKeyDown method
+                
+                // If this is a key item and player has 2 spoons, auto-exchange
+                if (this.canvas.id === "key" && levelData && levelData.getPlayerItem() === 2) {
+                    levelData.removePlayerItem("spoon");
+                    levelData.removePlayerItem("spoon");
+                    levelData.addKey();
+                    // Remove the key from the game
+                    this.destroy();
+                }
+            }
+        }
     }
 
     /**
