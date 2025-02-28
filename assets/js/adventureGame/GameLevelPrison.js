@@ -1,4 +1,3 @@
-// To build GameLevels, each contains GameObjects from below imports
 import GameEnv from './GameEnv.js';
 import Background from './Background.js';
 import GameObject from './GameObject.js';
@@ -6,6 +5,7 @@ import Player from './Player.js';
 import Item from './Item.js';
 import Data from './Data.js';
 import Npc from './Npc.js';
+import KeySlot from './KeySlot.js';
 
 class GameLevelPrison {
   constructor(path) {
@@ -17,9 +17,8 @@ class GameLevelPrison {
 
     const levelData = new Data();
 
-
     // Background data
-    const image_src_dungeon = path + "/images/gamify/forest.png"; // be sure to include the path
+    const image_src_dungeon = path + "/images/gamify/forest.png";
     const image_data_dungeon = {
         name: 'dungeon',
         greeting: "Welcome to the dungeon! Get 2 keys to escape.",
@@ -27,9 +26,8 @@ class GameLevelPrison {
         pixels: {height: 1135, width: 2490}
     };
 
-
     // Player data for Chillguy
-    const sprite_src_player = path + "/images/gamify/Dora.png"; // be sure to include the path
+    const sprite_src_player = path + "/images/gamify/Dora.png";
     const PLAYER_SCALE_FACTOR = 8;
     const sprite_data_player = {
         id: 'Player',
@@ -50,55 +48,48 @@ class GameLevelPrison {
         level_data: levelData
     };
 
-    // NPC data  
-    
-     // NPC data for Questgiver
-     const sprite_src_questgiver = path + "/images/gamify/bots.png";
-     const sprite_data_questgiver = {
-       id: 'Questgiver',
-       // Store the base greeting as a regular property
-       greeting: "I am boots! Find a key nearby and pick it up... Maybe go and ask that map thing over there! Quick before ratGPT comes for us!",
-       // Use a method instead of a getter
-       getGreeting() {
-           const itemsCollected = levelData.getPlayerItem();
-           if (itemsCollected >= 2) {
-               return "Thank you for finding both items! You are now free to leave.";
-           }
-           return this.baseGreeting;
-       },
-       src: sprite_src_questgiver,
-       SCALE_FACTOR: 6,
-       STEP_FACTOR: 1000,
-       ANIMATION_RATE: 50,
-       pixels: { height: 512, width: 2048 },
-       INIT_POSITION: { x: (width / 3 ), y: (height / 3 ) },
-       orientation: { rows: 1, columns: 4 },
-       down: { row: 0, start: 0, columns: 3 },
-       hitbox: { widthPercentage: 0.1, heightPercentage: 0.2 },
-       quest: {
-         title: "New Adventure",
-         description: "A tickler is near, please help!",
-         reward: "30 gold"
-       },
-       level_data: levelData
-     };
-      
-
+    // NPC data for Questgiver
+    const sprite_src_questgiver = path + "/images/gamify/bots.png";
+    const sprite_data_questgiver = {
+      id: 'Questgiver',
+      greeting: "I am boots! Find a key nearby and pick it up... Maybe go and ask that map thing over there! Quick before ratGPT comes for us!",
+      getGreeting() {
+          const itemsCollected = levelData.getPlayerItem();
+          if (itemsCollected >= 2) {
+              return "Thank you for finding both items! You've won the game!";
+          }
+          return this.greeting;
+      },
+      src: sprite_src_questgiver,
+      SCALE_FACTOR: 6,
+      STEP_FACTOR: 1000,
+      ANIMATION_RATE: 50,
+      pixels: { height: 512, width: 2048 },
+      INIT_POSITION: { x: (width / 3 ), y: (height / 3 ) },
+      orientation: { rows: 1, columns: 4 },
+      down: { row: 0, start: 0, columns: 3 },
+      hitbox: { widthPercentage: 0.1, heightPercentage: 0.2 },
+      quest: {
+        title: "New Adventure",
+        description: "A tickler is near, please help!",
+        reward: "30 gold"
+      },
+      level_data: levelData
+    };
     
     // NPC data for Tux 
-    const sprite_src_tux = path + "/images/gamify/Map.png"; // be sure to include the path
+    const sprite_src_tux = path + "/images/gamify/Map.png";
     const sprite_data_tux = {
         id: 'Map',
         greeting: "Hi I am Map. Use the e key when next to a key to pick it up. Game designers these days - not telling you everything huh.",
         src: sprite_src_tux,
-        SCALE_FACTOR: 10,  // Adjust this based on your scaling needs
+        SCALE_FACTOR: 10,
         ANIMATION_RATE: 50,
         pixels: {height: 64, width: 256},
         INIT_POSITION: { x: (width / 2), y: (height / 2)},
         orientation: {rows: 1, columns: 4 },
-        down: {row: 0, start: 0, columns: 3 },  // This is the stationary npc, down is default 
+        down: {row: 0, start: 0, columns: 3 },
         hitbox: { widthPercentage: 0.1, heightPercentage: 0.2 },
-        // Linux command quiz
         quiz: { 
           title: "Linux Command Quiz",
           questions: [
@@ -106,10 +97,10 @@ class GameLevelPrison {
           ] 
         },
         level_data: levelData,
-      };
+    };
 
-    // data for item
-    const spriteItem1 = path + "/images/gamify/koy.png"; // be sure to include the path
+    // data for item 1
+    const spriteItem1 = path + "/images/gamify/koy.png";
     const scaleItem1 = 10;
     const spriteDataItem1 = {
         id: 'Item',
@@ -127,12 +118,10 @@ class GameLevelPrison {
         up: {row: 1, start: 0, columns: 1 },
         hitbox: { widthPercentage: 0.2, heightPercentage: 0.2 },
         level_data: levelData,
-        
     };
 
-
-    // data for item
-    const spriteItem2 = path + "/images/gamify/koy.png"; // be sure to include the path
+    // data for item 2
+    const spriteItem2 = path + "/images/gamify/koy.png";
     const scaleItem2 = 10;
     const spriteDataItem2 = {
         id: 'Item',
@@ -152,18 +141,63 @@ class GameLevelPrison {
         level_data: levelData
     };
 
+    // FIXED: Data for key slot 1
+    const keySlot1Src = path + "/images/gamify/keyslot.png"; 
+    const keySlot1Scale = 4; // Smaller scale for better visibility
+    const keySlot1Data = {
+        id: 'KeySlot1',
+        greeting: "Place a key here to unlock the door.",
+        src: keySlot1Src,
+        SCALE_FACTOR: keySlot1Scale,
+        ANIMATION_RATE: 0, // No animation needed
+        INIT_POSITION: { x: width - 200, y: height - 200 },
+        pixels: {height: 64, width: 64}, // Make sure this matches your actual box image dimensions
+        orientation: {rows: 1, columns: 1 },
+        down: {row: 0, start: 0, columns: 1 }, // Only one frame
+        // Make hitbox larger for easier interaction
+        hitbox: { widthPercentage: 1.0, heightPercentage: 1.0 },
+        level_data: levelData,
+        slotIndex: 0, // First key slot
+        required_keys: 2 // Total keys needed to finish the game
+    };
 
-    // List of objects defnitions for this level
+    // FIXED: Data for key slot 2
+    const keySlot2Src = path + "/images/gamify/keyslot.png";
+    const keySlot2Scale = 4; // Same scale as the first slot
+    const keySlot2Data = {
+        id: 'KeySlot2',
+        greeting: "Place a key here to unlock the door.",
+        src: keySlot2Src,
+        SCALE_FACTOR: keySlot2Scale,
+        ANIMATION_RATE: 0, // No animation
+        INIT_POSITION: { x: width - 100, y: height - 200 },
+        pixels: {height: 64, width: 64},
+        orientation: {rows: 1, columns: 1 },
+        down: {row: 0, start: 0, columns: 1 },
+        hitbox: { widthPercentage: 1.0, heightPercentage: 1.0 },
+        level_data: levelData,
+        slotIndex: 1, // Second key slot
+        required_keys: 2 // Total keys needed to finish the game
+    };
+
+    // Initialize the static counter for KeySlot
+    KeySlot.resetSlots();
+
+    // List of objects definitions for this level
     this.objects = [
       { class: Background, data: image_data_dungeon },
       { class: Player, data: sprite_data_player },  
       { class: Item, data: spriteDataItem1 },
-      { class: Item, data: spriteDataItem2},
+      { class: Item, data: spriteDataItem2 },
       { class: Npc, data: sprite_data_questgiver },
-      { class: Npc, data: sprite_data_tux }
+      { class: Npc, data: sprite_data_tux },
+      { class: KeySlot, data: keySlot1Data },
+      { class: KeySlot, data: keySlot2Data }
     ];
+    
+    // Debug output when level is loaded
+    console.log("GameLevelPrison initialized with objects:", this.objects);
   }
-
 }
 
 export default GameLevelPrison;
