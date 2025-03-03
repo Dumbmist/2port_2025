@@ -69,7 +69,7 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 document.addEventListener("keydown", function(event) {
-    if (event.key === "f" || event.key === "F") {
+    if (event.key === "q" || event.key === "Q") {
         removeItemFromInventory("spoon");
     }
 });

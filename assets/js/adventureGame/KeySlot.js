@@ -1,195 +1,469 @@
-import GameObject from './GameObject.js';
+// To build GameLevels, each contains GameObjects from below imports
 import GameEnv from './GameEnv.js';
+import Background from './Background.js';
+import GameObject from './GameObject.js';
+import Player from './Player.js';
+import Character from './Character.js';
+import { removeItemFromInventory } from './inventory.js';
+
+// Define non-mutable constants as defaults
+const SCALE_FACTOR = 25; // 1/nth of the height of the canvas
+const STEP_FACTOR = 100; // 1/nth, or N steps up and across the canvas
+const ANIMATION_RATE = 1; // 1/nth of the frame rate
+const INIT_POSITION = { x: 0, y: 0 };
+
+
+/**
+ * Item is a dynamic class that manages the data and events for objects like player and NPCs.
+ * 
+ * The focus of this class is to handle the object's state, rendering, and key events.
+ * 
+ * This class uses a classic Java class pattern which is nice for managing object data and events.
+ * 
+ * The classic Java class pattern provides a structured way to define the properties and methods
+ * associated with the object. This approach helps encapsulate the object's state and behavior,
+ * making the code more modular and easier to maintain. By using this pattern, we can create
+ * multiple instances of the Player class, each with its own state and behavior.
+ * 
+ * @property {Object} position - The current position of the object.
+ * @property {Object} velocity - The current velocity of the object.
+ * @property {Object} scale - The scale of the object based on the game environment.
+ * @property {number} size - The size of the object.
+ * @property {number} width - The width of the object.
+ * @property {number} height - The height of the object.
+ * @property {number} xVelocity - The velocity of the object along the x-axis.
+ * @property {number} yVelocity - The velocity of the object along the y-axis.
+ * @property {Image} spriteSheet - The sprite sheet image for the object.
+ * @property {number} frameIndex - The current frame index for animation.
+ * @property {number} frameCount - The total number of frames for each direction.
+ * @property {Object} spriteData - The data for the sprite sheet.
+ * @property {number} frameCounter - Counter to control the animation rate.
+ * @method draw - Draws the object on the canvas.
+ * @method update - Updates the object's position and ensures it stays within the canvas boundaries.
+ * @method resize - Resizes the object based on the game environment.
+ * @method destroy - Removes the object from the game environment.    
+ */
+
+let levelData; 
 
 class KeySlot extends GameObject {
+    
     constructor(data = null) {
-        // Extract only the properties that GameObject needs
-        const gameObjectData = {
-          id: data?.id || `KeySlot_${data?.slotIndex || 0}`,
-          x: data?.x || 50,
-          y: data?.y || 50,
-          width: data?.width || 50,
-          height: data?.height || 50,
-          // Add any other properties that GameObject expects
-          spriteSheet: data?.spriteSheet,
-          canvas: data?.canvas,
-          ctx: data?.ctx
+        super();
+        
+        this.state = {
+            ...this.state,
+            keysInserted: 0,
+            collisionEvents: []
         };
         
-        // Pass the extracted data to super()
-        super(gameObjectData);
+        this.canvas = document.createElement("canvas");
+        this.canvas.id = data.id || "keySlot";
+        this.canvas.width = data.pixels?.width || 0;
+        this.canvas.height = data.pixels?.height || 0;
+        this.ctx = this.canvas.getContext('2d');
+        document.getElementById("gameContainer").appendChild(this.canvas);
         
-        // Initialize KeySlot-specific properties
-        this.slotIndex = data?.slotIndex || 0;
-        this.filled = false;
-        this.requiredKeys = data?.required_keys || 2;
-        this.level_data = data?.level_data;
+        this.position = data.INIT_POSITION || { x: 0, y: 0 };
+        this.spriteSheet = new Image();
+        this.spriteSheet.src = data.src;
         
-        // Track the number of filled slots across all instances
-        if (!KeySlot.filledSlots) {
-          KeySlot.filledSlots = 0;
+        this.isFilled = false;
+        this.collisionData = { touchPoints: { other: { id: null } } };
+        this.collidedPlayer = null;
+
+        this.x = 0;
+        this.y = 0;
+        this.frame = 0;
+        
+        this.scale = { width: GameEnv.innerWidth, height: GameEnv.innerHeight };
+        
+        if (data && data.src) {
+            this.scaleFactor = data.SCALE_FACTOR || SCALE_FACTOR;
+            this.stepFactor = data.STEP_FACTOR || STEP_FACTOR;
+            this.animationRate = data.ANIMATION_RATE || ANIMATION_RATE;
+            this.position = data?.INIT_POSITION || INIT_POSITION;
+    
+            this.spriteSheet = new Image();
+            this.spriteSheet.src = data.src;
+
+            this.frameIndex = 0;
+            this.frameCounter = 0;
+            this.direction = 'down';
+            this.spriteData = data;
+        } else {
+            throw new Error('Sprite data is required');
+        }
+
+        this.velocity = { x: 0, y: 0 };
+
+        levelData = data.level_data;
+
+        this.resize();
+
+        GameEnv.gameObjects.push(this);
+
+        document.addEventListener('keydown', this.handleKeyDown.bind(this));
+        document.addEventListener('keyup', this.handleKeyUp.bind(this));
+
+        console.log("KeySlot initialized - id:", this.canvas.id, "position:", this.position);
+    }
+
+    /**
+     * Adds a key to the keyslot from the player's inventory
+     * @returns {boolean} - Whether the key was added successfully
+     */
+    addKey() {
+        if (this.isFilled) {
+            console.log("KeySlot already filled!");
+            return false;
         }
         
-        // Add debugging info
-        console.log(`KeySlot ${this.slotIndex} created at position (${this.x}, ${this.y}) with dimensions ${this.width}x${this.height}`);
-      }
-
-  // Override update method
-  update() {
-    super.update();
-    this.playerInteraction();
-    
-    // Debug visualization
-    if (GameEnv.debug && this.canvas && this.ctx) {
-      this.ctx.strokeStyle = 'red';
-      this.ctx.lineWidth = 2;
-      this.ctx.strokeRect(this.x, this.y, this.width, this.height);
-      
-      // Add a colored center point to make sure the slot is visible
-      this.ctx.fillStyle = 'red';
-      this.ctx.beginPath();
-      this.ctx.arc(this.x + this.width/2, this.y + this.height/2, 5, 0, 2 * Math.PI);
-      this.ctx.fill();
-    }
-  }
-
-  playerInteraction() {
-    // Get the player from GameEnv
-    const player = GameEnv.players.find(player => player.id === 'Player');
-    if (!player) {
-      console.log("Player not found in GameEnv.players");
-      return;
-    }
-
-    // Check if player is near this key slot
-    if (this.isPlayerNearby(player)) {
-      console.log(`Player is near KeySlot ${this.slotIndex}`);
-      
-      if (!this.filled) {
-        // Check if player has collected keys
-        const itemsCollected = this.level_data.getPlayerItem();
+        const inventoryItems = JSON.parse(localStorage.getItem("inventoryItems") || "[]");
+        const hasKey = inventoryItems.includes("spoon");
         
-        // Show prompt to place key if player has keys
-        if (itemsCollected > 0) {
-          GameEnv.setMessage("Press E to place a key");
-          
-          // Check if E key is pressed to place a key
-          if (GameEnv.key_press["KeyE"]) {
-            console.log("E key pressed near slot - attempting to fill");
-            this.fillSlot(player);
-            // Clear the key press to prevent multiple activations
-            GameEnv.key_press["KeyE"] = false;
-          }
+        if (hasKey) {
+            inventoryItems.splice(inventoryItems.indexOf("spoon"), 1);
+            localStorage.setItem("inventoryItems", JSON.stringify(inventoryItems));
+            removeItemFromInventory("spoon");
+            this.isFilled = true;
+            console.log("KeySlot filled!");
+            return true;
         }
-      }
-    }
-  }
+        
+        console.log("No key in inventory!");
+        return false;
+    } 
 
-  isPlayerNearby(player) {
-    // Calculate centers for more accurate distance
-    const slotCenterX = this.x + (this.width / 2);
-    const slotCenterY = this.y + (this.height / 2);
-    const playerCenterX = player.x + (player.width / 2);
-    const playerCenterY = player.y + (player.height / 2);
+    checkVictoryCondition() {
+        if (GameEnv.victoryAchieved) return; // Stop checking if victory is already achieved
     
-    // Calculate distance between centers
-    const dx = Math.abs(slotCenterX - playerCenterX);
-    const dy = Math.abs(slotCenterY - playerCenterY);
-    const range = 100; // Interaction range
+        const keyslots = GameEnv.gameObjects.filter(obj => obj instanceof KeySlot);
+        const filledKeyslots = keyslots.filter(slot => slot.isFilled).length;
     
-    // Debug log distances when player is somewhat close
-    if (dx < 200 && dy < 200) {
-      console.log(`Distance to KeySlot ${this.slotIndex}: (${dx.toFixed(2)}, ${dy.toFixed(2)})`);
-    }
+        console.log(`Filled keyslots: ${filledKeyslots}/${keyslots.length}`);
     
-    return dx < range && dy < range;
-  }
+        if (filledKeyslots === keyslots.length && keyslots.length > 1) {
+            GameEnv.victoryAchieved = true; // Mark victory as achieved
+            GameEnv.paused = true; // Stop game logic
+            this.showVictoryScreen();
+        }
+    }    
+      
+    showVictoryScreen() {
+        const victoryScreen = document.createElement('div');
+        Object.assign(victoryScreen.style, {
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'black',
+            color: 'white',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: '1000',
+            fontSize: '3rem',
+        });
+    
+        const victoryText = document.createElement('h1');
+        victoryText.textContent = 'VICTORY!';
+        victoryText.style.marginBottom = '2rem';
+    
+        const victoryDesc = document.createElement('p');
+        victoryDesc.textContent = 'You have escaped the forest and saved ratGPT from the chest!'
+    
+        const restartButton = document.createElement('button');
+        Object.assign(restartButton.style, {
+            marginTop: '2rem',
+            padding: '1rem 2rem',
+            fontSize: '1.2rem',
+            cursor: 'pointer',
+        });
+        restartButton.textContent = 'Play Again';
+        restartButton.onclick = () => location.reload();
 
-  fillSlot(player) {
-    if (this.filled) return;
-    
-    // Reduce player's key count
-    const currentItems = this.level_data.getPlayerItem();
-    console.log(`Filling slot ${this.slotIndex}. Current items: ${currentItems}`);
-    
-    this.level_data.setPlayerItem(currentItems - 1);
-    
-    // Mark this slot as filled
-    this.filled = true;
-    KeySlot.filledSlots++;
-    
-    console.log(`KeySlot ${this.slotIndex} filled. Total filled: ${KeySlot.filledSlots}/${this.requiredKeys}`);
-    
-    // Check if all slots are filled
-    if (KeySlot.filledSlots >= this.requiredKeys) {
-      this.completeGame();
-    } else {
-      GameEnv.setMessage(`Key placed! (${KeySlot.filledSlots}/${this.requiredKeys})`);
-    }
-  }
+        const PongButton = document.createElement('button');
+        Object.assign(PongButton.style, {
+            marginTop: '2rem',
+            padding: '1rem 2rem',
+            fontSize: '1.2rem',
+            cursor: 'pointer',
+        });
+        
+        PongButton.textContent = 'Pong Game';
+        PongButton.onclick = () => {
+            window.location.href = 'pong.html';
+            };
+        
+            const SnakeButton = document.createElement('button');
+        Object.assign(SnakeButton.style, {
+            marginTop: '2rem',
+            padding: '1rem 2rem',
+            fontSize: '1.2rem',
+            cursor: 'pointer',
+        });
 
-  // Override the draw method to show filled state
-  draw() {
-    // First draw the sprite using parent's draw method
-    super.draw();
-    
-    // Then add visual indicator when the slot is filled
-    if (this.filled && this.ctx) {
-      this.ctx.fillStyle = 'rgba(255, 215, 0, 0.5)'; // Semi-transparent gold
-      this.ctx.fillRect(this.x, this.y, this.width, this.height);
-    }
-    
-    // Always add a subtle highlight to make the slot more visible
-    if (this.ctx) {
-      this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-      this.ctx.lineWidth = 2;
-      this.ctx.strokeRect(this.x, this.y, this.width, this.height);
-    }
-  }
+        SnakeButton.textContent = 'Snake Remix';
+        SnakeButton.onclick = () => {
+            window.location.href = 'snake.html';
+            };
 
-  completeGame() {
-    // Show victory message
-    GameEnv.setMessage("Congratulations! You've escaped the prison!");
+        victoryScreen.append(victoryText, victoryDesc, restartButton, PongButton, SnakeButton);
+        document.body.appendChild(victoryScreen);
     
-    // Create a victory overlay
-    const victoryScreen = document.createElement('div');
-    victoryScreen.style.position = 'fixed';
-    victoryScreen.style.top = '0';
-    victoryScreen.style.left = '0';
-    victoryScreen.style.width = '100%';
-    victoryScreen.style.height = '100%';
-    victoryScreen.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-    victoryScreen.style.display = 'flex';
-    victoryScreen.style.flexDirection = 'column';
-    victoryScreen.style.justifyContent = 'center';
-    victoryScreen.style.alignItems = 'center';
-    victoryScreen.style.zIndex = '1000';
-    victoryScreen.style.color = 'white';
-    victoryScreen.style.textAlign = 'center';
+        clearTimeout(this.victoryScreenTimeout);
+    };
     
-    victoryScreen.innerHTML = `
-      <h1 style="font-size: 3rem; margin-bottom: 1rem; color: gold;">You've Escaped!</h1>
-      <p style="font-size: 1.5rem; margin-bottom: 2rem;">Congratulations on finding the keys and unlocking the door!</p>
-      <button id="restart-btn" style="background-color: #4CAF50; border: none; color: white; padding: 15px 32px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 8px;">Play Again</button>
-    `;
-    
-    document.body.appendChild(victoryScreen);
-    
-    // Add restart button functionality
-    document.getElementById('restart-btn').addEventListener('click', () => {
-      location.reload(); // Simple reload to restart the game
-    });
-    
-    // Stop the game loop if available
-    if (typeof GameEnv.stopGame === 'function') {
-      GameEnv.stopGame();
-    }
-  }
 
-  // Reset all slots (static method)
-  static resetSlots() {
-    KeySlot.filledSlots = 0;
-  }
+    /**
+     * Draws the object on the canvas.
+     */
+    draw() {
+        if (this.spriteSheet) {
+            // Sprite Sheet frame size: pixels = total pixels / total frames
+            const frameWidth = this.spriteData.pixels.width / this.spriteData.orientation.columns;
+            const frameHeight = this.spriteData.pixels.height / this.spriteData.orientation.rows;
+    
+            // Sprite Sheet direction data source (e.g., front, left, right, back)
+            const directionData = this.spriteData[this.direction];
+    
+            // Sprite Sheet x and y declarations to store coordinates of current frame
+            let frameX, frameY;
+            // Sprite Sheet x and y current frame: coordinate = (index) * (pixels)
+            frameX = (directionData.start + this.frameIndex) * frameWidth;
+            frameY = directionData.row * frameHeight;
+    
+            // Set up the canvas dimensions and styles
+            this.canvas.width = frameWidth;
+            this.canvas.height = frameHeight;
+            this.canvas.style.width = `${this.width}px`;
+            this.canvas.style.height = `${this.height}px`;
+            this.canvas.style.position = 'absolute';
+            this.canvas.style.left = `${this.position.x}px`;
+            this.canvas.style.top = `${GameEnv.top+this.position.y}px`;
+    
+            // Clear the canvas before drawing
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    
+            // Draw the current frame of the sprite sheet
+            this.ctx.drawImage(
+                this.spriteSheet,
+                frameX, frameY, frameWidth, frameHeight, // Source rectangle
+                0, 0, this.canvas.width, this.canvas.height // Destination rectangle
+            );
+    
+            // Update the frame index for animation at a slower rate
+            this.frameCounter++;
+            if (this.frameCounter % this.animationRate === 0) {
+                this.frameIndex = (this.frameIndex + 1) % directionData.columns;
+            }
+        } else {
+            // Draw default red square
+            this.ctx.fillStyle = 'red';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+    }
+    
+    /**
+     * Updates the object's position and ensures it stays within the canvas boundaries.
+     */
+    update() {
+        // Update begins by drawing the object
+        this.draw();
+        
+        // Check for collisions with players
+        this.checkAllPlayerCollisions();
+        
+        if (GameEnv.victoryAchieved) return;
+
+        this.checkVictoryCondition();
+        
+        // Visual indicator for collision if debugging
+        if (GameEnv.debugging && this.collidedPlayer) {
+            this.ctx.strokeStyle = 'red';
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+    }
+
+    /**
+     * Check for collisions with all player objects in the game
+     */
+    checkAllPlayerCollisions() {
+        // Get all players from game objects
+        const players = GameEnv.gameObjects.filter(obj => 
+            obj instanceof Player || 
+            (obj.canvas && (obj.canvas.id === "player" || obj.canvas.id === "player2")));
+        
+        let collidingWithAnyPlayer = false;
+        
+        // Check collision with each player
+        for (const player of players) {
+            if (this.checkCollision(player)) {
+                this.collidedPlayer = player;
+                collidingWithAnyPlayer = true;
+                break;
+            }
+        }
+        
+        // Clear collided player if not colliding with any player
+        if (!collidingWithAnyPlayer) {
+            this.collidedPlayer = null;
+        }
+    }
+
+    /**
+     * Handle keydown events for interaction.
+     * @param {Object} event - The keydown event.
+     */
+    handleKeyDown(event) {
+        // Debug keypress
+        console.log(`Key pressed: ${event.key}`);
+        
+        if (event.key === 'q') {
+            console.log("Q key pressed - checking for player collision");
+            
+            // Check if player is colliding with keyslot
+            if (this.collidedPlayer) {
+                console.log("Player is in range to use key");
+                const success = this.addKey();
+                
+                if (!success && !this.isFilled) {
+                    // Show a message to the player that they need a key
+                    this.showMessage("You need a key to unlock this!");
+                }
+                
+                return;
+            } else {
+                console.log("No player in range to interact with keyslot");
+            }
+        }
+    }
+    
+    /**
+     * Show a temporary message to the player
+     * @param {string} message - The message to display
+     */
+    showMessage(message) {
+        // Remove any existing message
+        const existingMsg = document.getElementById("keyslot-message");
+        if (existingMsg) {
+            existingMsg.remove();
+        }
+        
+        // Create a message element
+        const msgElement = document.createElement("div");
+        msgElement.id = "keyslot-message";
+        msgElement.innerText = message;
+        msgElement.style.position = "absolute";
+        msgElement.style.top = `${this.position.y - 40}px`;
+        msgElement.style.left = `${this.position.x}px`;
+        msgElement.style.background = "rgba(0, 0, 0, 0.7)";
+        msgElement.style.color = "white";
+        msgElement.style.padding = "5px 10px";
+        msgElement.style.borderRadius = "5px";
+        msgElement.style.zIndex = "1000";
+        document.body.appendChild(msgElement);
+        
+        // Remove the message after 2 seconds
+        setTimeout(() => {
+            const msg = document.getElementById("keyslot-message");
+            if (msg) {
+                msg.remove();
+            }
+        }, 2000);
+    }
+
+    /**
+     * Handle keyup events
+     * @param {Object} event - The keyup event.
+     */
+    handleKeyUp(event) {
+        if (event.key === 'e' || event.key === 'u' || event.key === 'q') {
+            // Clear any active timeouts when the interaction key is released
+            if (this.alertTimeout) {
+                clearTimeout(this.alertTimeout);
+                this.alertTimeout = null;
+            }
+        }
+    }
+    
+    /**
+     * Check if an object is colliding with this keyslot
+     * @param {Object} obj - The object to check collision with
+     * @returns {boolean} - Whether a collision is occurring
+     */
+    checkCollision(obj) {
+        // Make sure the object has a position and size
+        if (!obj || !obj.position) {
+            return false;
+        }
+        
+        // Get width and height, with fallbacks
+        const objWidth = obj.width || 30;
+        const objHeight = obj.height || 30;
+        
+        // Simple AABB collision detection
+        const collision = (
+            obj.position.x < this.position.x + this.width &&
+            obj.position.x + objWidth > this.position.x &&
+            obj.position.y < this.position.y + this.height &&
+            obj.position.y + objHeight > this.position.y
+        );
+        
+        if (GameEnv.debugging && collision) {
+            console.log(`Collision detected with ${obj.canvas?.id}`);
+        }
+        
+        return collision;
+    }
+
+    /**
+     * Resizes the object based on the game environment.
+     */
+    resize() {
+        // Calculate the new scale resulting from the window resize
+        const newScale = { width: GameEnv.innerWidth, height: GameEnv.innerHeight };
+
+        // Adjust the object's position proportionally
+        this.position.x = (this.position.x / this.scale.width) * newScale.width;
+        this.position.y = (this.position.y / this.scale.height) * newScale.height;
+
+        // Update the object's scale to the new scale
+        this.scale = newScale;
+
+        // Recalculate the object's size based on the new scale
+        this.size = this.scale.height / this.scaleFactor; 
+
+        // Recalculate the object's velocity steps based on the new scale
+        this.xVelocity = this.scale.width / this.stepFactor;
+        this.yVelocity = this.scale.height / this.stepFactor;
+
+        // Set the object's width and height to the new size (object is a square)
+        this.width = this.size;
+        this.height = this.size;
+    }
+    
+    /**
+     * Destroy Game Object
+     * remove canvas element of object
+     * remove object from GameEnv.gameObjects array
+     */
+    destroy() {
+        // Remove event listeners
+        document.removeEventListener('keydown', this.handleKeyDown);
+        document.removeEventListener('keyup', this.handleKeyUp);
+        
+        const index = GameEnv.gameObjects.indexOf(this);
+        if (index !== -1) {
+            // Remove the canvas from the DOM
+            this.canvas.parentNode.removeChild(this.canvas);
+            GameEnv.gameObjects.splice(index, 1);
+        }
+    }
 }
 
 export default KeySlot;

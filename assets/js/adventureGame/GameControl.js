@@ -4,6 +4,7 @@ import GameLevelPrison from './GameLevelPrison.js';
 import GameLevelishan from './GameLevelishan.js';
 import GameLevelForest from './GameLevelForest.js';
 import { getStats } from "./StatsManager.js";
+import Player from "./Player.js";
 
 
 
@@ -88,7 +89,7 @@ const GameControl = {
 
     gameLoop: function() {
         // Base case: leave the game loop 
-        if (!GameEnv.continueLevel) {
+        if (!GameEnv.continueLevel || GameEnv.victoryAchieved) {
             this.handleLevelEnd();
             return;
         }

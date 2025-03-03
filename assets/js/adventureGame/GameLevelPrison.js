@@ -23,12 +23,12 @@ class GameLevelPrison {
         name: 'dungeon',
         greeting: "Welcome to the dungeon! Get 2 keys to escape.",
         src: image_src_dungeon,
-        pixels: {height: 1135, width: 2490}
+        pixels: {height: 1134, width: 2088}
     };
 
     // Player data for Chillguy
     const sprite_src_player = path + "/images/gamify/Dora.png";
-    const PLAYER_SCALE_FACTOR = 8;
+    const PLAYER_SCALE_FACTOR = 4;
     const sprite_data_player = {
         id: 'Player',
         greeting: "Hello, please help me escape this prison.",
@@ -43,7 +43,7 @@ class GameLevelPrison {
         left: {row: 3, start: 0, columns: 3 },
         right: {row: 2, start: 0, columns: 3 },
         up: {row: 1, start: 0, columns: 3 },
-        hitbox: { widthPercentage: 0.45, heightPercentage: 0.2 },
+        hitbox: { widthPercentage: 0.4, heightPercentage: 0.5 },
         keypress: { up: 87, left: 65, down: 83, right: 68 }, // W, A, S, D
         level_data: levelData
     };
@@ -56,19 +56,19 @@ class GameLevelPrison {
       getGreeting() {
           const itemsCollected = levelData.getPlayerItem();
           if (itemsCollected >= 2) {
-              return "Thank you for finding both items! You've won the game!";
+              return "Thank you for finding both items! Now place them in the key slots to escape!";
           }
           return this.greeting;
       },
       src: sprite_src_questgiver,
-      SCALE_FACTOR: 6,
+      SCALE_FACTOR: 4,
       STEP_FACTOR: 1000,
       ANIMATION_RATE: 50,
       pixels: { height: 512, width: 2048 },
       INIT_POSITION: { x: (width / 3 ), y: (height / 3 ) },
       orientation: { rows: 1, columns: 4 },
       down: { row: 0, start: 0, columns: 3 },
-      hitbox: { widthPercentage: 0.1, heightPercentage: 0.2 },
+      hitbox: { widthPercentage: 0.1, heightPercentage: 0.6 },
       quest: {
         title: "New Adventure",
         description: "A tickler is near, please help!",
@@ -83,7 +83,7 @@ class GameLevelPrison {
         id: 'Map',
         greeting: "Hi I am Map. Use the e key when next to a key to pick it up. Game designers these days - not telling you everything huh.",
         src: sprite_src_tux,
-        SCALE_FACTOR: 10,
+        SCALE_FACTOR: 8,
         ANIMATION_RATE: 50,
         pixels: {height: 64, width: 256},
         INIT_POSITION: { x: (width / 2), y: (height / 2)},
@@ -116,7 +116,7 @@ class GameLevelPrison {
         left: {row: 1, start: 0, columns: 1 },
         right: {row: 1, start: 0, columns: 1 },
         up: {row: 1, start: 0, columns: 1 },
-        hitbox: { widthPercentage: 0.2, heightPercentage: 0.2 },
+        hitbox: { widthPercentage: 0.4, heightPercentage: 0.4 },
         level_data: levelData,
     };
 
@@ -141,62 +141,71 @@ class GameLevelPrison {
         level_data: levelData
     };
 
-    // FIXED: Data for key slot 1
-    const keySlot1Src = path + "/images/gamify/keyslot.png"; 
-    const keySlot1Scale = 4; // Smaller scale for better visibility
-    const keySlot1Data = {
-        id: 'KeySlot1',
-        greeting: "Place a key here to unlock the door.",
-        src: keySlot1Src,
-        SCALE_FACTOR: keySlot1Scale,
-        ANIMATION_RATE: 0, // No animation needed
-        INIT_POSITION: { x: width - 200, y: height - 200 },
-        pixels: {height: 64, width: 64}, // Make sure this matches your actual box image dimensions
-        orientation: {rows: 1, columns: 1 },
-        down: {row: 0, start: 0, columns: 1 }, // Only one frame
-        // Make hitbox larger for easier interaction
-        hitbox: { widthPercentage: 1.0, heightPercentage: 1.0 },
-        level_data: levelData,
-        slotIndex: 0, // First key slot
-        required_keys: 2 // Total keys needed to finish the game
-    };
-
-    // FIXED: Data for key slot 2
-    const keySlot2Src = path + "/images/gamify/keyslot.png";
-    const keySlot2Scale = 4; // Same scale as the first slot
-    const keySlot2Data = {
-        id: 'KeySlot2',
-        greeting: "Place a key here to unlock the door.",
-        src: keySlot2Src,
-        SCALE_FACTOR: keySlot2Scale,
-        ANIMATION_RATE: 0, // No animation
-        INIT_POSITION: { x: width - 100, y: height - 200 },
+    const spriteItem3 = path + "/images/gamify/koy.png";
+    const scaleItem3 = 10;
+    const spriteDataItem3 = {
+        id: 'Item',
+        greeting: "none",
+        src: spriteItem3,
+        SCALE_FACTOR: scaleItem3,
+        STEP_FACTOR: 1000,
+        ANIMATION_RATE: 50,
+        INIT_POSITION: { x: 1000, y: height - (height/scaleItem3) - 400
+        }, 
         pixels: {height: 64, width: 64},
         orientation: {rows: 1, columns: 1 },
         down: {row: 0, start: 0, columns: 1 },
-        hitbox: { widthPercentage: 1.0, heightPercentage: 1.0 },
-        level_data: levelData,
-        slotIndex: 1, // Second key slot
-        required_keys: 2 // Total keys needed to finish the game
+        left: {row: 1, start: 0, columns: 1 },
+        right: {row: 1, start: 0, columns: 1 },
+        up: {row: 1, start: 0, columns: 1 },
+        hitbox: { widthPercentage: 0.2, heightPercentage: 0.2 },
+        level_data: levelData
     };
 
-    // Initialize the static counter for KeySlot
-    KeySlot.resetSlots();
+ 
+    const sprite_src_keyslot1 = path + "/images/gamify/keyslot.png";
+    const sprite_data_keyslot1 = {
+        id: 'Keyslot',
+        greeting: "You have encountered a keyslot, a random key on your keyboard provides the key slot with the key and removes it from your inventory.",
+        src: sprite_src_keyslot1,
+        SCALE_FACTOR: 6,
+        ANIMATION_RATE: 50,
+        pixels: {height: 64, width: 256},
+        INIT_POSITION: { x: (width / 3 * 2), y: (height / 3 * 2)},
+        orientation: {rows: 1, columns: 4 },
+        down: {row: 0, start: 0, columns: 3 },
+        hitbox: { widthPercentage: 0.1, heightPercentage: 0.2 },
+        level_data: levelData,
+    };
+    
+    const sprite_src_keyslot2 = path + "/images/gamify/keyslot.png";
+    const sprite_data_keyslot2 = {
+        id: 'Keyslot',
+        greeting: "You have encountered a keyslot, a random key on your keyboard provides the key slot with the key and removes it from your inventory.",
+        src: sprite_src_keyslot2,
+        SCALE_FACTOR: 6,
+        ANIMATION_RATE: 50,
+        pixels: {height: 64, width: 256},
+        INIT_POSITION: { x: (width / 15 * 12), y: (height / 12 * 2)},
+        orientation: {rows: 1, columns: 4 },
+        down: {row: 0, start: 0, columns: 3 },
+        hitbox: { widthPercentage: 0.1, heightPercentage: 0.2 },
+        level_data: levelData,
+    };
+    
 
-    // List of objects definitions for this level
     this.objects = [
       { class: Background, data: image_data_dungeon },
       { class: Player, data: sprite_data_player },  
       { class: Item, data: spriteDataItem1 },
       { class: Item, data: spriteDataItem2 },
+      { class: Item, data: spriteDataItem3 },
       { class: Npc, data: sprite_data_questgiver },
       { class: Npc, data: sprite_data_tux },
-      { class: KeySlot, data: keySlot1Data },
-      { class: KeySlot, data: keySlot2Data }
+      { class: KeySlot, data: sprite_data_keyslot1 },
+      { class: KeySlot, data: sprite_data_keyslot2 }
     ];
     
-    // Debug output when level is loaded
-    console.log("GameLevelPrison initialized with objects:", this.objects);
   }
 }
 
