@@ -3,7 +3,7 @@ description: "Class of 2028"
 owner_name: John Mortensen
 github_username: Dumbmist
 github_repo: "2port_2025" 
-# baseurl: "/portfolio_2025"
+#baseurl: "/portfolio_2025"
 future: true
 remote_theme: jekyll/minima
 minima:
