@@ -209,10 +209,6 @@ class GameObject {
         this.handleCollisionState();
     }
 
-    /**
-     * Handles the reaction to the collision, this could be overridden by subclasses
-     * @param {*} other 
-     */
     handleCollisionReaction(other) {
         // Only show the greeting alert if the greeting is not "none"
         if (other.greet && other.greet !== "none") {
