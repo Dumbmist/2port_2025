@@ -21,7 +21,7 @@ class GameLevelPrison {
     const image_src_dungeon = path + "/images/gamify/forest.png";
     const image_data_dungeon = {
         name: 'dungeon',
-        greeting: "Welcome to the forest. Get 2 keys to escape from ratGPT",
+        greeting: "Welcome to the dungeon! Get 2 keys to escape.",
         src: image_src_dungeon,
         pixels: {height: 1134, width: 2088}
     };
@@ -98,37 +98,6 @@ class GameLevelPrison {
         },
         level_data: levelData,
     };
-    const sprite_src_ruins = path + "/assets/npcs/New Piskel (2).png"; // be sure to include the path
-    const sprite_data_ruins = {
-        id: 'Tree',
-        greeting: "none",
-        src: sprite_src_ruins,
-        pixels: {height: 64, width: 64},
-        SCALE_FACTOR: 4,
-        ANIMATION_RATE: 100,
-        INIT_POSITION: { x: (width * 700/2088), y: (height * 59/81)},
-        orientation: {rows: 1, columns: 1 },
-        down: {row: 0, start: 0, columns: 1 },  
-        hitbox: { widthPercentage: 0.3, heightPercentage: 0.3 },
-      
-
-      };
-    
-      const sprite_src_tree1 = path + "/assets/npcs/New Piskel (2).png"; // be sure to include the path
-      const sprite_data_tree1 = {
-          id: 'Tree',
-          greeting: "none",
-          src: sprite_src_tree1,
-          pixels: {height: 64, width: 64},
-          SCALE_FACTOR: 4,
-          ANIMATION_RATE: 100,
-          INIT_POSITION: { x: (width * 700/2088), y: (height * 59/81)},
-          orientation: {rows: 1, columns: 1 },
-          down: {row: 0, start: 0, columns: 1 },  
-          hitbox: { widthPercentage: 0.3, heightPercentage: 0.3 },
-        
-  
-        };
 
     // data for item 1
     const spriteItem1 = path + "/images/gamify/koy.png";
@@ -234,9 +203,7 @@ class GameLevelPrison {
       { class: Npc, data: sprite_data_questgiver },
       { class: Npc, data: sprite_data_tux },
       { class: KeySlot, data: sprite_data_keyslot1 },
-      { class: KeySlot, data: sprite_data_keyslot2 },
-      { class: Npc, data: sprite_data_ruins},
-      { class: Npc, data: sprite_data_tree1},
+      { class: KeySlot, data: sprite_data_keyslot2 }
     ];
     
   }

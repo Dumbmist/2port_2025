@@ -213,12 +213,6 @@ class GameObject {
         this.handleReaction();
     }
 
-    handleCollisionReaction(other) {
-        // Only show the greeting alert if the greeting is not "none"
-        if (other.greet && other.greet !== "none") {
-            alert(other.greet);
-        }
-    }
     /**
      * Handles Player reaction or state updates related to the collision
      */
