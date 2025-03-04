@@ -197,16 +197,15 @@ class GameObject {
      * @param {*} objectID 
      */
     handleCollisionEvent() {
-        const objectOther = this.collisionData.touchPoints.other;
+        const objectID = this.collisionData.touchPoints.other.id;
+        const objectGreet = this.collisionData.touchPoints.other.greet;
+
         // check if the collision type is not already in the collisions array
-        if (!this.state.collisionEvents.includes(objectOther.id)) {
+        if (!this.state.collisionEvents.includes(objectID)) {
             // add the collisionType to the collisions array, making it the current collision
-            this.state.collisionEvents.push(objectOther.id);
-            this.handleCollisionReaction(objectOther);
-            
-            
+                
         }
-        this.handleCollisionState();
+        this.handleReaction();
     }
 
     handleCollisionReaction(other) {
