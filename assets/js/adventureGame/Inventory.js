@@ -9,7 +9,6 @@ const itemImages = {
 
 export function setPath(path){
     imagePath = path;
-
     console.log(imagePath);
 }
 
@@ -19,23 +18,40 @@ function updateInventory() {
 
     inventory.innerHTML = ""; // Clear old items
 
-    inventoryItems.forEach(item => {
+    // Create 4 slots, even if not all are filled
+    for (let i = 0; i < 4; i++) {
         const slot = document.createElement("div");
         slot.className = "inventory-slot";
 
-        const img = document.createElement("img");
-        img.src = imagePath + itemImages[item] || imagePath + "/assets/images/default.png"; // Fallback image
-        img.alt = item;
-        img.style.width = "40px";
-        img.style.height = "40px";
+        // Consistent styling for all slots
+        Object.assign(slot.style, {
+            backgroundColor: "rgba(0, 0, 0, 0.7)", // Slightly transparent black
+            border: "3px solid goldenrod", // More elegant border
+            width: "50px",
+            height: "50px",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            margin: "0 5px", // Reduced vertical margin, kept horizontal spacing
+            boxShadow: "0 0 10px rgba(255, 215, 0, 0.3)" // Subtle glow effect
+        });
 
-        slot.appendChild(img);
+        // Add item to slot if exists
+        if (inventoryItems[i]) {
+            const img = document.createElement("img");
+            img.src = imagePath + itemImages[inventoryItems[i]] || imagePath + "/assets/images/default.png";
+            img.alt = inventoryItems[i];
+            img.style.width = "35px";
+            img.style.height = "35px";
+            slot.appendChild(img);
+        }
+
         inventory.appendChild(slot);
-    });
+    }
 }
 
 export function addItemToInventory(itemName) {
-    if (inventoryItems.length < 8) { // Limit inventory slots
+    if (inventoryItems.length < 4) { // Limit inventory slots
         inventoryItems.push(itemName);
         localStorage.setItem("inventoryItems", JSON.stringify(inventoryItems));
     } else {
@@ -43,7 +59,6 @@ export function addItemToInventory(itemName) {
     }
     updateInventory();
 }
-
 
 export function removeItemFromInventory(itemName) {
     const index = inventoryItems.indexOf(itemName);
@@ -61,9 +76,22 @@ document.addEventListener("DOMContentLoaded", function() {
         return;
     }
 
-    inventory.style.display = "grid";
-    inventory.style.border = "2px solid red"; // Debugging border
-
+    // Improved inventory container styling
+    Object.assign(inventory.style, {
+        display: "flex", // Changed from grid to flex
+        flexDirection: "row", // Horizontal layout
+        justifyContent: "center", // Center slots horizontally
+        alignItems: "flex-start", // Align to top of screen
+        position: "fixed", // Position relative to viewport
+        top: "10px", // Small padding from top
+        left: "50%", // Center horizontally
+        transform: "translateX(-50%)", // Adjust for true center
+        padding: "10px",
+        border: "4px solid goldenrod",
+        borderRadius: "10px",
+        backgroundColor: "rgba(50, 50, 50, 0.8)",
+        zIndex: "10" // Ensure it's above other game elements
+    });
 
     updateInventory();
 });

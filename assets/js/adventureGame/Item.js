@@ -224,19 +224,43 @@ class Item extends GameObject {
     }
 
     hasCollided(expectedGreeting) {
+        // Check if there are any collision events first
+        if (!this.state.collisionEvents || this.state.collisionEvents.length === 0) {
+            return false;
+        }
+
         for (let id of this.state.collisionEvents) {
             // Find the object that this item collided with
             const collidedObj = GameEnv.gameObjects.find(obj => obj.canvas?.id === id);
             
-            // Check if the collided object has the expected greeting
+            // Ensure there's an active collision
             if (collidedObj && 
                 ((collidedObj.spriteData && collidedObj.spriteData.greeting === expectedGreeting) || 
                 (typeof collidedObj.getGreeting === 'function' && 
                 collidedObj.getGreeting() === expectedGreeting))) {
-                return true;
+                
+                // Additional check to ensure the collision is currently active
+                return this.isCurrentlyCollidingWith(collidedObj);
             }
         }
         return false;
+    }
+
+    // New method to verify current collision
+    isCurrentlyCollidingWith(otherObj) {
+        // Implement precise collision detection
+        // This is a basic bounding box collision check
+        if (!otherObj || !this.canvas || !otherObj.canvas) return false;
+
+        const rect1 = this.canvas.getBoundingClientRect();
+        const rect2 = otherObj.canvas.getBoundingClientRect();
+
+        return !(
+            rect1.right < rect2.left || 
+            rect1.left > rect2.right || 
+            rect1.bottom < rect2.top || 
+            rect1.top > rect2.bottom
+        );
     }
 
     // Replace your duplicate handleCollisionEvent methods with this single one

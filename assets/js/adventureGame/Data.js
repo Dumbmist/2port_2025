@@ -38,7 +38,7 @@ class Data {
             if (questGiver) {
                 if (this.keys == 0) {
 
-                    questGiver.spriteData.greeting = "Here's the key to escape. Use it wisely!";
+                    questGiver.spriteData.greeting = "Now you have collected the keys, go to one of the rare keyslots and press q to give them the key!";
                     console.clear(); 
                 } else {
                     questGiver.spriteData.greeting = "You already have the key. Use it to escape!";

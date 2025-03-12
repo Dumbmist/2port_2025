@@ -208,7 +208,7 @@ class KeySlot extends GameObject {
 
         SnakeButton.textContent = 'Snake Remix';
         SnakeButton.onclick = () => {
-            window.location.href = 'snake.html';
+            window.location.href = 'pong.html';
             };
 
         victoryScreen.append(victoryText, victoryDesc, restartButton, PongButton, SnakeButton);

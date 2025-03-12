@@ -65,7 +65,7 @@ class GameLevelPrison {
       STEP_FACTOR: 1000,
       ANIMATION_RATE: 50,
       pixels: { height: 512, width: 2048 },
-      INIT_POSITION: { x: (width / 3 ), y: (height / 3 ) },
+      INIT_POSITION: { x: (width / 3 ), y: (height / 10 ) },
       orientation: { rows: 1, columns: 4 },
       down: { row: 0, start: 0, columns: 3 },
       hitbox: { widthPercentage: 0.1, heightPercentage: 0.6 },
@@ -78,11 +78,11 @@ class GameLevelPrison {
     };
     
     // NPC data for Tux 
-    const sprite_src_tux = path + "/images/gamify/Map.png";
-    const sprite_data_tux = {
+    const sprite_src_map = path + "/images/gamify/Map.png";
+    const sprite_data_map = {
         id: 'Map',
-        greeting: "Hi I am Map. Use the e key when next to a key to pick it up. Game designers these days - not telling you everything huh.",
-        src: sprite_src_tux,
+        greeting: "Hi I am Map. Use the e key when next to a key to pick it up. Game designers these days - not telling you everything huh. Go back to boots after.",
+        src: sprite_src_map,
         SCALE_FACTOR: 8,
         ANIMATION_RATE: 50,
         pixels: {height: 64, width: 256},
@@ -150,6 +150,27 @@ class GameLevelPrison {
         SCALE_FACTOR: scaleItem3,
         STEP_FACTOR: 1000,
         ANIMATION_RATE: 50,
+        INIT_POSITION: { x: 700, y: height - (height/scaleItem3) - 100
+        }, 
+        pixels: {height: 64, width: 64},
+        orientation: {rows: 1, columns: 1 },
+        down: {row: 0, start: 0, columns: 1 },
+        left: {row: 1, start: 0, columns: 1 },
+        right: {row: 1, start: 0, columns: 1 },
+        up: {row: 1, start: 0, columns: 1 },
+        hitbox: { widthPercentage: 0.2, heightPercentage: 0.2 },
+        level_data: levelData
+    };
+
+    const spriteItem4 = path + "/images/gamify/koy.png";
+    const scaleItem4 = 10;
+    const spriteDataItem4 = {
+        id: 'Item',
+        greeting: "none",
+        src: spriteItem4,
+        SCALE_FACTOR: scaleItem4,
+        STEP_FACTOR: 1000,
+        ANIMATION_RATE: 50,
         INIT_POSITION: { x: 1000, y: height - (height/scaleItem3) - 400
         }, 
         pixels: {height: 64, width: 64},
@@ -162,11 +183,13 @@ class GameLevelPrison {
         level_data: levelData
     };
 
+    
+
  
     const sprite_src_keyslot1 = path + "/images/gamify/keyslot.png";
     const sprite_data_keyslot1 = {
         id: 'Keyslot',
-        greeting: "You have encountered a keyslot, a random key on your keyboard provides the key slot with the key and removes it from your inventory.",
+        greeting: "You have encountered a keyslot, a random key on your keyboard provides the key slot with the key and removes it from your inventory. MAYBE BOOTS KNOWS - THE MONKEY.",
         src: sprite_src_keyslot1,
         SCALE_FACTOR: 6,
         ANIMATION_RATE: 50,
@@ -174,7 +197,7 @@ class GameLevelPrison {
         INIT_POSITION: { x: (width / 3 * 2), y: (height / 3 * 2)},
         orientation: {rows: 1, columns: 4 },
         down: {row: 0, start: 0, columns: 3 },
-        hitbox: { widthPercentage: 0.1, heightPercentage: 0.2 },
+        hitbox: { widthPercentage: 0.2, heightPercentage: 0.5 },
         level_data: levelData,
     };
     
@@ -189,7 +212,7 @@ class GameLevelPrison {
         INIT_POSITION: { x: (width / 15 * 12), y: (height / 12 * 2)},
         orientation: {rows: 1, columns: 4 },
         down: {row: 0, start: 0, columns: 3 },
-        hitbox: { widthPercentage: 0.1, heightPercentage: 0.2 },
+        hitbox: { widthPercentage: 0.2, heightPercentage: 0.5 },
         level_data: levelData,
     };
     
@@ -200,8 +223,9 @@ class GameLevelPrison {
       { class: Item, data: spriteDataItem1 },
       { class: Item, data: spriteDataItem2 },
       { class: Item, data: spriteDataItem3 },
+      {class: Item, data: spriteDataItem4},
       { class: Npc, data: sprite_data_questgiver },
-      { class: Npc, data: sprite_data_tux },
+      { class: Npc, data: sprite_data_map },
       { class: KeySlot, data: sprite_data_keyslot1 },
       { class: KeySlot, data: sprite_data_keyslot2 }
     ];
